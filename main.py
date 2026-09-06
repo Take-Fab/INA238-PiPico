@@ -29,10 +29,13 @@ IMAX_AMPS = 6.0
 # INA238 register map
 # -----------------------------------------------------------------------------
 REG_CONFIG = 0x00
-REG_SHUNT_VOLTAGE = 0x01
-REG_BUS_VOLTAGE = 0x02
-REG_CURRENT = 0x04
-REG_CALIBRATION = 0x05
+REG_ADC_CONFIG = 0x01
+REG_SHUNT_CALIBRATION = 0x02
+REG_VSHUNT = 0x04
+REG_VBUS = 0x05
+REG_DIETEMP = 0x06
+REG_CURRENT = 0x07
+REG_POWER = 0x08
 REG_MANUFACTURER_ID = 0x3E
 REG_DEVICE_ID = 0x3F
 
@@ -47,9 +50,13 @@ class INA238:
         self.i_max = i_max
 
         self.current_lsb = i_max / 32768.0
-        self.calibration = int(0.00512 / (self.current_lsb * self.shunt_ohm))
+        self.calibration = int(819.2e6 * self.current_lsb * self.shunt_ohm)
 
-        self.write_u16(REG_CALIBRATION, self.calibration)
+        self.write_u16(REG_SHUNT_CALIBRATION, self.calibration)
+
+        # Continuous shunt and bus voltage, 50us, no averaging
+        self.adc_config = (0xB << 12) | (0x0 << 9) | (0x0 << 6) | (0x5 << 3) | (0x0)
+        self.write_u16(REG_ADC_CONFIG, self.adc_config)  
 
     def write_u16(self, reg, value):
         payload = bytes([(value >> 8) & 0xFF, value & 0xFF])
@@ -72,7 +79,9 @@ class INA238:
         return self.read_u16(REG_DEVICE_ID)
 
     def bus_voltage_v(self):
-        raw = self.read_u16(REG_BUS_VOLTAGE)
+        raw = self.read_u16(REG_VBUS)
+        if raw > 0x8000:
+            raw -= 0x10000
         return raw * 0.003125
 
     def current_a(self):
