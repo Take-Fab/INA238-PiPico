@@ -49,9 +49,8 @@ class INA238:
         self.v_max = v_max
         self.i_max = i_max
 
-        self.current_lsb = i_max / 32768.0
+        self.current_lsb = self.i_max / 32768.0
         self.calibration = int(819.2e6 * self.current_lsb * self.shunt_ohm)
-
         self.write_u16(REG_SHUNT_CALIBRATION, self.calibration)
 
         # Continuous shunt and bus voltage, 50us, no averaging
@@ -78,10 +77,11 @@ class INA238:
     def device_id(self):
         return self.read_u16(REG_DEVICE_ID)
 
+    def get_vshunt(self):
+        return self.read_u16(REG_VSHUNT)
+
     def bus_voltage_v(self):
         raw = self.read_u16(REG_VBUS)
-        if raw > 0x8000:
-            raw -= 0x10000
         return raw * 0.003125
 
     def current_a(self):
@@ -112,9 +112,10 @@ def read_voltage_and_current(ina):
 # -----------------------------------------------------------------------------
 # @brief USB 送出
 # -----------------------------------------------------------------------------
-def send_usb(bus_voltage_v, current_a):
-    print("BUS = {:.3f} V, CUR = {:.3f} A ({:.1f} mA)".format(
+def send_usb(bus_voltage_v, shunt_v, current_a):
+    print("BUS = {:.3f} V, CUR = ({}) {:.6f} A ({:.1f} mA)".format(
         bus_voltage_v,
+        shunt_v,
         current_a,
         current_a * 1000.0
     ))
@@ -126,7 +127,8 @@ def send_usb(bus_voltage_v, current_a):
 def tick_monitor(ina):
     while True:
         bus_voltage_v, current_a = read_voltage_and_current(ina)
-        send_usb(bus_voltage_v, current_a)
+        shunt_v = ina.get_vshunt()
+        send_usb(bus_voltage_v, shunt_v, current_a)
         time.sleep_ms(TICK_MS)
 
 
