@@ -110,25 +110,31 @@ def read_voltage_and_current(ina):
 
 
 # -----------------------------------------------------------------------------
-# @brief USB 送出
+# @brief USB 送出 データ
 # -----------------------------------------------------------------------------
-def send_usb(bus_voltage_v, shunt_v, current_a):
-    print("BUS = {:.3f} V, CUR = ({}) {:.6f} A ({:.1f} mA)".format(
+def send_usb_data(bus_voltage_v, shunt_v, current_a):
+    print("{:.3f}, {:.6f}, {}".format(
         bus_voltage_v,
-        shunt_v,
         current_a,
-        current_a * 1000.0
+        shunt_v,
     ))
 
+# -----------------------------------------------------------------------------
+# @brief USB 送出 ヘッダ
+# -----------------------------------------------------------------------------
+def send_usb_header():
+    print("BUS Voltage (V), Current (A), Shunt Voltage (V)")
 
 # -----------------------------------------------------------------------------
 # @brief tick 毎に値取得、送出処理を起動
 # -----------------------------------------------------------------------------
 def tick_monitor(ina):
+    send_usb_header()
+    
     while True:
         bus_voltage_v, current_a = read_voltage_and_current(ina)
         shunt_v = ina.get_vshunt()
-        send_usb(bus_voltage_v, shunt_v, current_a)
+        send_usb_data(bus_voltage_v, shunt_v, current_a)
         time.sleep_ms(TICK_MS)
 
 
