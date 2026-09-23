@@ -10,7 +10,7 @@
 # 起動時に、INA238 の IDs を送出
 # shunt register = 0.002 ohm
 # Vmax = 20V, Imax = 6A
-# tick 毎に値の取得、送出を行う。Default 100ms。
+# tick 毎に値の取得、送出を行う。Default 10ms。
 
 import time
 from machine import I2C, Pin
@@ -18,7 +18,7 @@ from machine import I2C, Pin
 # -----------------------------------------------------------------------------
 # Settings
 # -----------------------------------------------------------------------------
-TICK_MS = 100
+TICK_MS = 10
 I2C_ADDR = 0x40
 I2C_FREQ = 400000
 SHUNT_RESISTOR_OHMS = 0.002
