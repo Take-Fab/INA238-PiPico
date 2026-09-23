@@ -131,10 +131,14 @@ def send_usb_header():
 def tick_monitor(ina):
     send_usb_header()
     
+    led = Pin(25, Pin.OUT)
+
     while True:
+        led.value(0)  # GP25 LED OFF
         bus_voltage_v, current_a = read_voltage_and_current(ina)
         shunt_v = ina.get_vshunt()
         send_usb_data(bus_voltage_v, shunt_v, current_a)
+        led.value(1)  # GP25 LED ON
         time.sleep_ms(TICK_MS)
 
 
@@ -142,6 +146,9 @@ def tick_monitor(ina):
 # @brief 初期化、main loop
 # -----------------------------------------------------------------------------
 def main():
+    led = Pin(25, Pin.OUT)
+    led.value(1)  # GP25 LED ON
+
     print("Raspberry Pi Pico + INA238")
     print("I2C FAST MODE: 400kHz")
     print("Sample interval: {} ms".format(TICK_MS))
