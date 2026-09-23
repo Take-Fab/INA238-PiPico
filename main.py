@@ -12,8 +12,7 @@
 # Vmax = 20V, Imax = 6A
 # tick 毎に値の取得、送出を行う。Default 10ms。
 
-import time
-from machine import I2C, Pin
+from machine import I2C, Pin, Timer
 
 # -----------------------------------------------------------------------------
 # Settings
@@ -126,20 +125,34 @@ def send_usb_header():
     print("BUS Voltage (V), Current (A), Shunt Voltage (V)")
 
 # -----------------------------------------------------------------------------
+# @brief 時間毎の処理
+# -----------------------------------------------------------------------------
+def tick_callback(timer):
+    global tick_due
+    tick_due = True
+
+
+# -----------------------------------------------------------------------------
 # @brief tick 毎に値取得、送出処理を起動
 # -----------------------------------------------------------------------------
-def tick_monitor(ina):
+def tick_monitor(ina, led):
+    global tick_due
+
+    tick_due = False
+    timer = Timer()
+    timer.init(period=TICK_MS, mode=Timer.PERIODIC, callback=tick_callback)
+
     send_usb_header()
     
-    led = Pin(25, Pin.OUT)
-
     while True:
-        led.value(0)  # GP25 LED OFF
-        bus_voltage_v, current_a = read_voltage_and_current(ina)
-        shunt_v = ina.get_vshunt()
-        send_usb_data(bus_voltage_v, shunt_v, current_a)
-        led.value(1)  # GP25 LED ON
-        time.sleep_ms(TICK_MS)
+        if tick_due:
+            tick_due = False
+            led.value(0)  # GP25 LED OFF
+            bus_voltage_v, current_a = read_voltage_and_current(ina)
+            shunt_v = ina.get_vshunt()
+            send_usb_data(bus_voltage_v, shunt_v, current_a)
+            led.value(1)  # GP25 LED ON
+
 
 
 # -----------------------------------------------------------------------------
@@ -162,7 +175,7 @@ def main():
 
     ina = INA238(i2c)
     send_ina_ids(ina)
-    tick_monitor(ina)
+    tick_monitor(ina, led)
 
 
 if __name__ == "__main__":
